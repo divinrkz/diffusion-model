@@ -31,7 +31,7 @@ def get_args():
     p.add_argument("--T",         type=int,   default=1000)
     p.add_argument("--epochs",    type=int,   default=50)
     p.add_argument("--lr",        type=float, default=1e-4)
-    p.add_argument("--batch_size",type=int,   default=128)
+    p.add_argument("--batch_size",type=int,   default=64)
     p.add_argument("--save_dir",  type=str,   default="runs/vp")
     p.add_argument("--device",    type=str,   default="cuda" if torch.cuda.is_available() else "cpu")
     # Early stopping
@@ -67,10 +67,18 @@ def score_loss(sde: VPSDE, model: torch.nn.Module, x0: torch.Tensor, device) -> 
     Returns:
         Scalar loss.
     """
-    # TODO (5.A.iii / 5.B setup) — implement the DSM loss.
-    # Hint: sample t ~ Uniform(0,1), call sde.marginal(), call model(x_t, t),
-    #       and compute the weighted MSE as in Song21 Eq. (7).
-    raise NotImplementedError
+    eps = 1e-5  # truncate t away from 0 for numerical stability
+    t = torch.rand(x0.shape[0], device=device) * (1.0 - eps) + eps
+    x_t, noise = sde.marginal(x0, t)
+
+    # Network predicts the score s_θ(x_t, t).  The conditional score is
+    #   ∇ log q(x_t | x_0) = -(x_t - c(t) x_0) / σ(t)^2 = -noise / σ(t).
+    # With likelihood weighting λ(t) = σ(t)^2 the DSM objective becomes
+    #   E[ || σ(t) s_θ + noise ||^2 ]   (Song21 Eq. 7 / Yang Song's tutorial).
+    score = model(x_t, t)
+    sigma_t = sde.sigma(t).view(-1, *([1] * (x0.dim() - 1)))
+    residual = score * sigma_t + noise
+    return torch.mean(torch.sum(residual ** 2, dim=tuple(range(1, x0.dim()))))
 
 
 def main():

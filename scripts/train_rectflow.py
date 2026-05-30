@@ -30,7 +30,7 @@ def get_args():
     p = argparse.ArgumentParser()
     p.add_argument("--epochs",         type=int,   default=50)
     p.add_argument("--lr",             type=float, default=1e-4)
-    p.add_argument("--batch_size",     type=int,   default=128)
+    p.add_argument("--batch_size",     type=int,   default=64)
     p.add_argument("--save_dir",       type=str,   default="runs/rectflow")
     p.add_argument("--device",         type=str,   default="cuda" if torch.cuda.is_available() else "cpu")
     # Reflow options

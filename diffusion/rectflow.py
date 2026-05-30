@@ -48,9 +48,15 @@ class RectifiedFlow:
             (x_t, x0, vel): interpolated point, noise used, and regression
                             target velocity (x1 - x0), all shape (B, *).
         """
-        # TODO (6.A) — sample x0 ~ N(0,I), form x_t, compute vel
-        # Hint: broadcast t to match x1's spatial dimensions before multiplying.
-        raise NotImplementedError
+        # Noise endpoint X_0 ~ N(0, I)
+        x0 = torch.randn_like(x1)
+        # Broadcast t from (B,) to (B, 1, 1, ...) to match x1's dimensions
+        t_b = t.view(t.shape[0], *([1] * (x1.dim() - 1)))
+        # Linear interpolation:  X_t = (1 - t) X_0 + t X_1
+        x_t = (1.0 - t_b) * x0 + t_b * x1
+        # Regression target: constant velocity along the straight path
+        vel = x1 - x0
+        return x_t, x0, vel
 
     def loss(self, v_theta: nn.Module, x1: Tensor) -> Tensor:
         """Rectified Flow training loss (RF objective).
@@ -65,12 +71,29 @@ class RectifiedFlow:
         Returns:
             Scalar loss.
         """
-        # TODO (6.A)
-        raise NotImplementedError
+        # t ~ Uniform(0, 1), one per sample in the batch
+        t = torch.rand(x1.shape[0], device=x1.device)
+        x_t, _x0, vel = self.forward_process(x1, t)
+        v_pred = v_theta(x_t, t)
+        return F.mse_loss(v_pred, vel)
 
     # ------------------------------------------------------------------
     # 6.B  Euler ODE sampler
     # ------------------------------------------------------------------
+
+    @torch.no_grad()
+    def _integrate(self, v_theta: nn.Module, x: Tensor, num_steps: int) -> Tensor:
+        """Integrate the flow ODE  dX/dt = v_θ(X_t, t)  from t=0 to t=1.
+
+        Forward Euler with uniform step Δt = 1 / num_steps, starting from the
+        given initial condition ``x`` = X_0.
+        """
+        dt = 1.0 / num_steps
+        b = x.shape[0]
+        for i in range(num_steps):
+            t = torch.full((b,), i * dt, device=x.device)
+            x = x + v_theta(x, t) * dt
+        return x
 
     @torch.no_grad()
     def euler_sample(
@@ -79,6 +102,7 @@ class RectifiedFlow:
         shape: tuple[int, ...],
         num_steps: int = 100,
         device: str | torch.device = "cpu",
+        initial_noise: Tensor | None = None,
     ) -> Tensor:
         """Euler ODE sampler for rectified flow (Problem 6.B).
 
@@ -96,8 +120,12 @@ class RectifiedFlow:
         Returns:
             Generated samples X_1, shape (B, C, H, W).
         """
-        # TODO (6.B)
-        raise NotImplementedError
+        # Start from fresh Gaussian noise X_0 ~ N(0, I)
+        if initial_noise is not None:
+            x0 = initial_noise.to(device)
+        else:
+            x0 = torch.randn(shape, device=device)
+        return self._integrate(v_theta, x0, num_steps)
 
     # ------------------------------------------------------------------
     # 6.C  Reflow  (data generation only — retraining uses loss() above)
@@ -130,5 +158,15 @@ class RectifiedFlow:
         Returns:
             (x0_all, x1_all): tensors of shape (n_pairs, C, H, W) on CPU.
         """
-        # TODO (6.C)
-        raise NotImplementedError
+        x0_chunks: list[Tensor] = []
+        x1_chunks: list[Tensor] = []
+        remaining = n_pairs
+        while remaining > 0:
+            b = min(batch_size, remaining)
+            # Fresh noise endpoint, then push it through the trained ODE
+            x0 = torch.randn(b, *image_shape, device=device)
+            x1 = self._integrate(v_theta, x0, num_steps)
+            x0_chunks.append(x0.cpu())
+            x1_chunks.append(x1.cpu())
+            remaining -= b
+        return torch.cat(x0_chunks, dim=0), torch.cat(x1_chunks, dim=0)

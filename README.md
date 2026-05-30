@@ -1,7 +1,5 @@
-# EE/CS 148B HW 4 — Diffusion Models
+# Diffusion Models
 
-Starter code for HW 4 of EE/CS 148B (Spring 2026).  See `hw4.pdf` (in the
-assignment release) for the full writeup.
 
 ## Repository Layout
 
@@ -9,17 +7,17 @@ assignment release) for the full writeup.
 hw4/
 ├── diffusion/                      # Core library
 │   ├── __init__.py
-│   ├── unet.py                     # PROVIDED: time-conditioned U-Net (shared by Parts 5 & 6)
-│   ├── vp.py                       # TODO: VP SDE, EM sampler, PC sampler  (Parts 5.A & 5.B)
-│   └── rectflow.py                 # TODO: Rectified Flow forward, loss, Euler sampler  (Part 6)
+│   ├── unet.py                    
+│   ├── vp.py                       
+│   └── rectflow.py               
 │
 ├── scripts/                        # CLI entry points
-│   ├── plot_coefficient.py         # TODO: Part 1.8 — coefficient plot
-│   ├── train_vp.py                 # Part 5.C — train VP score model on FashionMNIST
-│   ├── train_rectflow.py           # Part 6.A/C — train Rectified Flow (+ reflow)
-│   ├── sample.py                   # TODO: Parts 5.C, 6.B, 6.D — generate & compare samples
-│   ├── eval_kid.py                 # TODO: Part 6.B — KID evaluation table
-│   └── guided_diffusion_experiments.py  # TODO: Part 7 — plotting helpers
+│   ├── plot_coefficient.py         
+│   ├── train_vp.py                 
+│   ├── train_rectflow.py           
+│   ├── sample.py                  
+│   ├── eval_kid.py                
+│   └── guided_diffusion_experiments.py  
 │
 ├── tests/                          # Test infrastructure
 │   ├── adapters.py                 # TODO: bind your implementations to test hooks
@@ -27,8 +25,8 @@ hw4/
 │   └── test_rectflow.py            # Autograder tests for Rectified Flow
 │
 ├── configs/
-│   ├── vp_fashionmnist.yaml        # Hyperparameters for Part 5
-│   └── rectflow_fashionmnist.yaml  # Hyperparameters for Part 6
+│   ├── vp_fashionmnist.yaml       
+│   └── rectflow_fashionmnist.yaml  
 │
 ├── data/                           # Dataset cache (gitignored)
 │   └── README.md
@@ -38,9 +36,6 @@ hw4/
 └── .gitignore
 ```
 
-`PROVIDED` files contain working code and should not be modified.
-`TODO` files contain skeleton methods with `raise NotImplementedError` and
-clear docstrings — these are what you implement.
 
 ## Assignment Map
 
@@ -155,14 +150,6 @@ python ../scripts/guided_diffusion_experiments.py --task 7_1 --npz out/samples_*
 See `scripts/guided_diffusion_experiments.py` for plotting helpers for all
 sub-problems (7.1–7.5).
 
-## Submission
-
-Submit two items to Gradescope:
-
-- `assignment4.pdf` — typed answers, plots, and a link to your Colab notebook.
-- **HW4 — Code**: your `VP.py` file (renamed from `diffusion/vp.py`).
-
-Both your Colab notebook and submitted code must run without error.
 
 ## Compute
 

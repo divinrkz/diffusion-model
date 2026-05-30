@@ -15,6 +15,8 @@ dependencies = [
     "einops>=0.8.0",
     "pyyaml>=6.0.0",
     "wandb>=0.18.0",
+    "ipykernel>=7.2.0",
+    "ipywidgets>=8.1.8",
 ]
 
 [project.optional-dependencies]
